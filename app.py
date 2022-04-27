@@ -2,10 +2,10 @@ import os
 import uuid
 
 from flask import request, Flask, render_template
-# from werkzeug.utils import secure_filename
+from werkzeug.utils import secure_filename
 
 import numpy as np
-from keras.models import load_model
+from tensorflow import keras
 from PIL import Image
 
 app = Flask(__name__)
@@ -61,15 +61,13 @@ IMAGE_CLASSES = {
 
 
 def predict_image(img):
-    image = Image.open(img)
+    image = Image.open(img).convert('RGB')
     image = image.resize((60, 60))
     X_test = np.array(image).reshape((1, 60, 60, 3))
-    model = load_model('./model.20-0.02.h5')
-    test_pred_labels = model.predict(X_test)
-    test_pred_labels = np.argmax(test_pred_labels, axis=1)
-    assert test_pred_labels.shape
-    assert 1 == 0, test_pred_labels
-    return test_pred_labels
+    model = keras.models.load_model('./model.20-0.02.h5')
+    predicted_labels_score = model.predict(X_test)
+    predicted_label = np.argmax(predicted_labels_score, axis=1)[0]
+    return IMAGE_CLASSES[predicted_label]
 
 
 @app.route('/')
@@ -80,16 +78,13 @@ def index():
 @app.route('/predict', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
-        file_path = uuid.uuid4()
+        file_path = str(uuid.uuid4())
         request.files['file'].save(file_path)
         result = predict_image(file_path)
-        # s = [str(i) for i in result]
-        # a = int("".join(s))
-        # result = "Predicted Traffic🚦Sign is: " +classes[a]
         os.remove(file_path)
-        return result
+        return 'Predicted Traffic🚦Sign is: ' + result
     return None
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
