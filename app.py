@@ -9,8 +9,6 @@ from PIL import Image
 
 app = Flask(__name__)
 
-print("something)")
-
 # Classes of trafic signs
 IMAGE_CLASSES = {
     0: 'Speed limit [20]',
